@@ -1,0 +1,34 @@
+version: "3.5"
+services:
+
+  hu-exo-common-stage:
+    image: hu-exo-common-stage
+    build:
+      context: ./
+      dockerfile: ./hu-exo-devtools/dockerfiles/exo-common-stage.dockerfile
+      args:
+        - SSH_KEY=${SSH_KEY}
+
+  hu-exo-database:
+    container_name: hu-exo-database 
+    image: postgres:12.2
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - '5432:5432'
+
+  hu-exo-cartridge-template-python-3:
+    container_name: hu-exo-cartridge-template-python-3
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      target: exo-cartridge-fatman
+    volumes:
+      - ./tests:/app/tests
+      - ./cartridge/src:/app/src
+      - ./development_setup.py:/app/development_setup.py
+      - ./exo_local_config.yml:/app/exo_local_config.yml
+
+
+

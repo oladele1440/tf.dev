@@ -1,0 +1,36 @@
+image: python:3.8
+options:
+  docker: true
+definitions:
+  steps: 
+    - step: &build-test
+        name: "build the dev stack and run the tests"
+        services:
+          - docker
+        caches: 
+          - pip
+        script:
+          - "git submodule update --init"
+          - "export SSH_KEY=$(cat /opt/atlassian/pipelines/agent/ssh/id_rsa)"
+          - pip install --no-cache-dir docker-compose
+          - docker-compose up -d
+          - docker-compose run hu-exo-cartridge-template-python-3 pytest --cov=src --cov-fail-under=75 tests
+          - docker-compose run hu-exo-cartridge-template-python-3 prospector -M
+    - step: &deploy
+        name: "tag and deploy the image"
+        script:
+          - pipe: atlassian/aws-ecr-push-image:1.2.0
+            variables:
+              AWS_ACCESS_KEY_ID: $ECR_DEPLOY_AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $ECR_DEPLOY_AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: 'us-east-1' 
+              IMAGE_NAME: "exo-cartridge-python3.8"
+              TAGS: "$(git describe --tags $(git rev-list --tags --max-count=1))"
+pipelines:
+  pull-requests:
+    '**':
+      - step: *build-test
+  branches:
+    'main':
+      - step: *build-test
+#      - step: *deploy

@@ -1,0 +1,8 @@
+secrets:
+  logger:
+    user: postgres
+    password: postgres
+    host: hu-exo-database 
+    port: 5432
+    schema: logger
+    database: postgres
